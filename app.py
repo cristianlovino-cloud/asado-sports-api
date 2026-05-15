@@ -6,163 +6,110 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-API_KEY = os.environ.get('API_FOOTBALL_KEY', '')
-BASE_URL = 'https://v3.football.api-sports.io'
-BASE_F1  = 'https://v1.formula-1.api-sports.io'
+FOOTBALL_DATA_KEY = os.environ.get('FOOTBALL_DATA_KEY', '')
+FOOTBALL_DATA_URL = 'https://api.football-data.org/v4'
 
-HEADERS_FOOTBALL = {
-    'x-apisports-key': API_KEY
+GRUPOS_2026 = {
+  "A": ["México","Jamaica","Honduras","Ecuador"],
+  "B": ["Estados Unidos","Panamá","Bosnia y Herzegovina","Ghana"],
+  "C": ["Canadá","Trinidad y Tobago","Países Bajos","Noruega"],
+  "D": ["Brasil","Japón","Suiza","Camerún"],
+  "E": ["Argentina","Ecuador","Hungría","Marruecos"],
+  "F": ["España","Senegal","Serbia","Nueva Zelanda"],
+  "G": ["Alemania","Australia","Arabia Saudita","Costa Rica"],
+  "H": ["Portugal","Eslovenia","Ucrania","Sudáfrica"],
+  "I": ["Francia","Bélgica","R. Checa","Haití"],
+  "J": ["Inglaterra","Túnez","Eslovaquia","Kenia"],
+  "K": ["Colombia","Rumania","Côte d'Ivoire","Togo"],
+  "L": ["Uruguay","Cuba","Qatar","China"],
 }
-HEADERS_F1 = {
-    'x-apisports-key': API_KEY
-}
 
-# ── Mundial 2026 ──────────────────────────────────────
-# ID del torneo Mundial: league=1, season=2026
-MUNDIAL_LEAGUE = 1
-MUNDIAL_SEASON = 2026
-
-@app.route('/mundial/grupos')
-def mundial_grupos():
-    """Posiciones por grupo del Mundial 2026"""
-    try:
-        r = requests.get(
-            f'{BASE_URL}/standings',
-            headers=HEADERS_FOOTBALL,
-            params={'league': MUNDIAL_LEAGUE, 'season': MUNDIAL_SEASON},
-            timeout=10
-        )
-        data = r.json()
-        if data.get('errors') or not data.get('response'):
-            return jsonify({'ok': False, 'error': 'Sin datos disponibles aún', 'raw': data}), 200
-        return jsonify({'ok': True, 'data': data['response']})
-    except Exception as e:
-        return jsonify({'ok': False, 'error': str(e)}), 500
-
-@app.route('/mundial/partidos')
-def mundial_partidos():
-    """Partidos del Mundial 2026 (todos)"""
-    try:
-        r = requests.get(
-            f'{BASE_URL}/fixtures',
-            headers=HEADERS_FOOTBALL,
-            params={'league': MUNDIAL_LEAGUE, 'season': MUNDIAL_SEASON},
-            timeout=10
-        )
-        data = r.json()
-        if data.get('errors') or not data.get('response'):
-            return jsonify({'ok': False, 'error': 'Sin datos disponibles aún', 'raw': data}), 200
-        return jsonify({'ok': True, 'data': data['response']})
-    except Exception as e:
-        return jsonify({'ok': False, 'error': str(e)}), 500
-
-@app.route('/mundial/proximos')
-def mundial_proximos():
-    """Próximos partidos del Mundial (next 10)"""
-    try:
-        r = requests.get(
-            f'{BASE_URL}/fixtures',
-            headers=HEADERS_FOOTBALL,
-            params={'league': MUNDIAL_LEAGUE, 'season': MUNDIAL_SEASON, 'next': 10},
-            timeout=10
-        )
-        data = r.json()
-        if not data.get('response'):
-            return jsonify({'ok': False, 'error': 'Sin datos', 'raw': data}), 200
-        return jsonify({'ok': True, 'data': data['response']})
-    except Exception as e:
-        return jsonify({'ok': False, 'error': str(e)}), 500
-
-# ── F1 ────────────────────────────────────────────────
-F1_SEASON = 2025
-
-@app.route('/f1/calendario')
-def f1_calendario():
-    """Calendario de carreras F1 2025"""
-    try:
-        r = requests.get(
-            f'{BASE_F1}/races',
-            headers=HEADERS_F1,
-            params={'season': F1_SEASON},
-            timeout=10
-        )
-        data = r.json()
-        if not data.get('response'):
-            return jsonify({'ok': False, 'error': 'Sin datos F1', 'raw': data}), 200
-        return jsonify({'ok': True, 'data': data['response']})
-    except Exception as e:
-        return jsonify({'ok': False, 'error': str(e)}), 500
-
-@app.route('/f1/pilotos')
-def f1_pilotos():
-    """Standings de pilotos F1 2025"""
-    try:
-        r = requests.get(
-            f'{BASE_F1}/rankings/drivers',
-            headers=HEADERS_F1,
-            params={'season': F1_SEASON},
-            timeout=10
-        )
-        data = r.json()
-        if not data.get('response'):
-            return jsonify({'ok': False, 'error': 'Sin datos F1', 'raw': data}), 200
-        return jsonify({'ok': True, 'data': data['response']})
-    except Exception as e:
-        return jsonify({'ok': False, 'error': str(e)}), 500
-
-@app.route('/f1/constructores')
-def f1_constructores():
-    """Standings de constructores F1 2025"""
-    try:
-        r = requests.get(
-            f'{BASE_F1}/rankings/teams',
-            headers=HEADERS_F1,
-            params={'season': F1_SEASON},
-            timeout=10
-        )
-        data = r.json()
-        if not data.get('response'):
-            return jsonify({'ok': False, 'error': 'Sin datos F1', 'raw': data}), 200
-        return jsonify({'ok': True, 'data': data['response']})
-    except Exception as e:
-        return jsonify({'ok': False, 'error': str(e)}), 500
-
-@app.route('/f1/ultima')
-def f1_ultima():
-    """Última carrera disputada"""
-    try:
-        r = requests.get(
-            f'{BASE_F1}/races',
-            headers=HEADERS_F1,
-            params={'season': F1_SEASON, 'type': 'Race'},
-            timeout=10
-        )
-        data = r.json()
-        if not data.get('response'):
-            return jsonify({'ok': False, 'error': 'Sin datos', 'raw': data}), 200
-        # Filtrar las que ya tienen resultado (status finished)
-        terminadas = [r for r in data['response'] if r.get('status') == 'Completed']
-        ultima = terminadas[-1] if terminadas else None
-        return jsonify({'ok': True, 'data': ultima})
-    except Exception as e:
-        return jsonify({'ok': False, 'error': str(e)}), 500
-
-# ── Health check ──────────────────────────────────────
 @app.route('/')
 def health():
     return jsonify({
         'status': 'ok',
         'service': 'asado-sports-api',
-        'endpoints': [
-            '/mundial/grupos',
-            '/mundial/partidos',
-            '/mundial/proximos',
-            '/f1/calendario',
-            '/f1/pilotos',
-            '/f1/constructores',
-            '/f1/ultima',
-        ]
+        'endpoints': ['/mundial/grupos','/mundial/fixtures','/f1/pilotos','/f1/constructores','/f1/calendario','/f1/ultima']
     })
+
+@app.route('/mundial/grupos')
+def mundial_grupos():
+    if FOOTBALL_DATA_KEY:
+        try:
+            r = requests.get(f'{FOOTBALL_DATA_URL}/competitions/WC/standings',
+                headers={'X-Auth-Token': FOOTBALL_DATA_KEY}, timeout=8)
+            if r.status_code == 200 and r.json().get('standings'):
+                return jsonify({'ok': True, 'source': 'live', 'data': r.json()['standings']})
+        except: pass
+    grupos_fmt = [{'grupo': f'Grupo {k}', 'letra': k,
+        'equipos': [{'nombre': e,'pts':0,'pj':0,'pg':0,'pe':0,'pp':0,'gf':0,'gc':0} for e in v]}
+        for k,v in GRUPOS_2026.items()]
+    return jsonify({'ok': True, 'source': 'static', 'data': grupos_fmt})
+
+@app.route('/mundial/fixtures')
+def mundial_fixtures():
+    if FOOTBALL_DATA_KEY:
+        try:
+            r = requests.get(f'{FOOTBALL_DATA_URL}/competitions/WC/matches',
+                headers={'X-Auth-Token': FOOTBALL_DATA_KEY}, timeout=8)
+            if r.status_code == 200:
+                return jsonify({'ok': True, 'source': 'live', 'data': r.json().get('matches',[])})
+        except: pass
+    return jsonify({'ok': False, 'error': 'El torneo aún no comenzó', 'data': []})
+
+@app.route('/f1/pilotos')
+def f1_pilotos():
+    try:
+        r = requests.get('https://ergast.com/api/f1/2025/driverStandings.json', timeout=8)
+        sl = r.json()['MRData']['StandingsTable']['StandingsLists']
+        if not sl: return jsonify({'ok':False,'error':'Sin datos aún'})
+        return jsonify({'ok':True,'source':'ergast','data':[{
+            'pos':int(p['position']),'nombre':f"{p['Driver']['givenName']} {p['Driver']['familyName']}",
+            'codigo':p['Driver'].get('code',''),'escuderia':p['Constructors'][0]['name'] if p['Constructors'] else '',
+            'pts':float(p['points']),'victorias':int(p['wins'])} for p in sl[0]['DriverStandings']]})
+    except Exception as e: return jsonify({'ok':False,'error':str(e)})
+
+@app.route('/f1/constructores')
+def f1_constructores():
+    try:
+        r = requests.get('https://ergast.com/api/f1/2025/constructorStandings.json', timeout=8)
+        sl = r.json()['MRData']['StandingsTable']['StandingsLists']
+        if not sl: return jsonify({'ok':False,'error':'Sin datos aún'})
+        return jsonify({'ok':True,'source':'ergast','data':[{
+            'pos':int(e['position']),'nombre':e['Constructor']['name'],
+            'pts':float(e['points']),'victorias':int(e['wins'])} for e in sl[0]['ConstructorStandings']]})
+    except Exception as e: return jsonify({'ok':False,'error':str(e)})
+
+@app.route('/f1/calendario')
+def f1_calendario():
+    try:
+        r = requests.get('https://ergast.com/api/f1/2025.json', timeout=8)
+        carreras = r.json()['MRData']['RaceTable']['Races']
+        return jsonify({'ok':True,'source':'ergast','data':[{
+            'ronda':int(c['round']),'nombre':c['raceName'],
+            'circuito':c['Circuit']['circuitName'],
+            'pais':c['Circuit']['Location']['country'],
+            'ciudad':c['Circuit']['Location']['locality'],
+            'fecha':c['date'],'hora':c.get('time','')} for c in carreras]})
+    except Exception as e: return jsonify({'ok':False,'error':str(e)})
+
+@app.route('/f1/ultima')
+def f1_ultima():
+    try:
+        r = requests.get('https://ergast.com/api/f1/2025/last/results.json', timeout=8)
+        races = r.json()['MRData']['RaceTable']['Races']
+        if not races: return jsonify({'ok':False,'error':'Sin resultados aún'})
+        c = races[0]
+        return jsonify({'ok':True,'source':'ergast',
+            'carrera':{'nombre':c['raceName'],'circuito':c['Circuit']['circuitName'],
+                       'fecha':c['date'],'pais':c['Circuit']['Location']['country']},
+            'data':[{'pos':res['position'],
+                'nombre':f"{res['Driver']['givenName']} {res['Driver']['familyName']}",
+                'codigo':res['Driver'].get('code',''),'escuderia':res['Constructor']['name'],
+                'pts':res.get('points','0'),
+                'tiempo':res.get('Time',{}).get('time',res.get('status',''))}
+                for res in c.get('Results',[])[:10]]})
+    except Exception as e: return jsonify({'ok':False,'error':str(e)})
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
