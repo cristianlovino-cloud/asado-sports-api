@@ -13,34 +13,36 @@ JOLPICA = 'https://api.jolpi.ca/ergast/f1'
 SPORTMONKS_TOKEN = os.environ.get('SPORTMONKS_TOKEN', 'sfvnNhihy5FY4JWTM1B7JOXA3jlatU1Jv6NtWfn0xS7VTkiA28HKUQNsNNbu')
 SPORTMONKS_BASE = 'https://api.sportmonks.com/v3/football'
 
+# Grupos oficiales FIFA Mundial 2026 — fuente: 365score (mayo 2026)
 GRUPOS_2026 = {
-  "A": ["Mexico","Jamaica","Honduras","Ecuador"],
-  "B": ["Estados Unidos","Panama","Bosnia y Herzegovina","Ghana"],
-  "C": ["Canada","Trinidad y Tobago","Paises Bajos","Noruega"],
-  "D": ["Brasil","Japon","Suiza","Camerun"],
-  "E": ["Argentina","Marruecos","Hungria","Arabia Saudita"],
-  "F": ["Espana","Senegal","Serbia","Nueva Zelanda"],
-  "G": ["Alemania","Colombia","Costa de Marfil","Eslovaquia"],
-  "H": ["Portugal","Eslovenia","Ucrania","Sudafrica"],
-  "I": ["Francia","Belgica","Rep. Checa","Haiti"],
-  "J": ["Inglaterra","Tunez","Costa Rica","Kenia"],
-  "K": ["Uruguay","Rumania","Egipto","Togo"],
-  "L": ["Iran","Cuba","Qatar","China"],
+  "A": ["Mexico","Corea del Sur","Sudafrica","Republica Checa"],
+  "B": ["Canada","Suiza","Qatar","Bosnia Herzegovina"],
+  "C": ["Brasil","Marruecos","Escocia","Haiti"],
+  "D": ["Estados Unidos","Australia","Paraguay","Turquia"],
+  "E": ["Alemania","Ecuador","Costa de Marfil","Curazao"],
+  "F": ["Paises Bajos","Peru","Tunez","Suecia"],
+  "G": ["Belgica","Iran","Egipto","Nueva Zelanda"],
+  "H": ["Cabo Verde","Arabia Saudita","Espana","Uruguay"],
+  "I": ["Francia","Senegal","Noruega","Irak"],
+  "J": ["Argelia","Argentina","Austria","Jordania"],
+  "K": ["Portugal","Colombia","Eslovenia","RD Congo"],
+  "L": ["Inglaterra","Croacia","Panama","Ghana"],
 }
 
 BANDERAS = {
-  "Mexico":"MX","Jamaica":"JM","Honduras":"HN","Ecuador":"EC",
-  "Estados Unidos":"US","Panama":"PA","Bosnia y Herzegovina":"BA","Ghana":"GH",
-  "Canada":"CA","Trinidad y Tobago":"TT","Paises Bajos":"NL","Noruega":"NO",
-  "Brasil":"BR","Japon":"JP","Suiza":"CH","Camerun":"CM",
-  "Argentina":"AR","Marruecos":"MA","Hungria":"HU","Arabia Saudita":"SA",
-  "Espana":"ES","Senegal":"SN","Serbia":"RS","Nueva Zelanda":"NZ",
-  "Alemania":"DE","Colombia":"CO","Costa de Marfil":"CI","Eslovaquia":"SK",
-  "Portugal":"PT","Eslovenia":"SI","Ucrania":"UA","Sudafrica":"ZA",
-  "Francia":"FR","Belgica":"BE","Rep. Checa":"CZ","Haiti":"HT",
-  "Inglaterra":"GB","Tunez":"TN","Costa Rica":"CR","Kenia":"KE",
-  "Uruguay":"UY","Rumania":"RO","Egipto":"EG","Togo":"TG",
-  "Iran":"IR","Cuba":"CU","Qatar":"QA","China":"CN",
+  "Mexico":"MX","Corea del Sur":"KR","Sudafrica":"ZA","Republica Checa":"CZ",
+  "Canada":"CA","Suiza":"CH","Qatar":"QA","Bosnia Herzegovina":"BA",
+  "Brasil":"BR","Marruecos":"MA","Escocia":"GB-SCT","Haiti":"HT",
+  "Estados Unidos":"US","Australia":"AU","Paraguay":"PY","Turquia":"TR",
+  "Alemania":"DE","Ecuador":"EC","Costa de Marfil":"CI","Curazao":"CW",
+  "Paises Bajos":"NL","Honduras":"HN","Tunez":"TN","Suecia":"SE",
+  "Belgica":"BE","Iran":"IR","Egipto":"EG","Nueva Zelanda":"NZ",
+  "Cabo Verde":"CV","Arabia Saudita":"SA","Espana":"ES","Uruguay":"UY",
+  "Francia":"FR","Senegal":"SN","Noruega":"NO","Irak":"IQ",
+  "Argelia":"DZ","Argentina":"AR","Austria":"AT","Jordania":"JO",
+  "Portugal":"PT","Colombia":"CO","Eslovenia":"SI","RD Congo":"CD",
+  "Peru":"PE",
+  "Inglaterra":"GB","Croacia":"HR","Panama":"PA","Ghana":"GH",
 }
 
 # ─── HEALTH ────────────────────────────────────────────────────────────────────
