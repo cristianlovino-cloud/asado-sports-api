@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔥 Sports API Tester</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f0f0f; color: #eee; font-family: monospace; padding: 16px; }
+  h1 { color: #ff6b35; margin-bottom: 16px; font-size: 1.2rem; }
+  .base { color: #666; font-size: 0.75rem; margin-bottom: 16px; word-break: break-all; }
+  .grid { display: grid; gap: 8px; margin-bottom: 16px; }
+  button {
+    background: #1a1a1a; border: 1px solid #333; color: #7eb8f7;
+    padding: 10px 14px; cursor: pointer; border-radius: 6px;
+    font-family: monospace; font-size: 0.8rem; text-align: left;
+    transition: all 0.15s;
+  }
+  button:hover { background: #222; border-color: #ff6b35; color: #fff; }
+  button.loading { opacity: 0.5; pointer-events: none; }
+  #status { font-size: 0.75rem; margin-bottom: 8px; min-height: 18px; }
+  .ok { color: #4caf50; } .err { color: #f44336; } .warn { color: #ff9800; }
+  #output {
+    background: #080808; border: 1px solid #222; border-radius: 6px;
+    padding: 12px; font-size: 0.7rem; line-height: 1.7;
+    max-height: 500px; overflow-y: auto; white-space: pre-wrap; word-break: break-all;
+  }
+  .summary { background: #1a2a1a; border: 1px solid #2a4a2a; border-radius: 4px; padding: 8px 12px; margin-bottom: 10px; font-size: 0.75rem; }
+  .ping-warning { background: #2a1a00; border: 1px solid #ff9800; border-radius: 4px; padding: 8px 12px; margin-bottom: 10px; font-size: 0.75rem; color: #ff9800; }
+</style>
+</head>
+<body>
+
+<h1>🔥 asado-sports-api — Test Suite</h1>
+<div class="base" id="baseUrl">Backend: https://asado-sports-api.onrender.com</div>
+
+<div class="grid">
+  <button onclick="ping()">⚡ GET /  (health check — puede tardar 50s si está dormido)</button>
+  <button onclick="hit('/mundial/grupos')">⚽ GET /mundial/grupos</button>
+  <button onclick="hit('/f1/pilotos')">🏎️ GET /f1/pilotos</button>
+  <button onclick="hit('/f1/constructores')">🏗️ GET /f1/constructores</button>
+  <button onclick="hit('/f1/calendario')">📅 GET /f1/calendario</button>
+  <button onclick="hit('/f1/ultima')">🏁 GET /f1/ultima</button>
+  <button onclick="hit('/sm/ping')">🔑 GET /sm/ping (SportMonks recursos)</button>
+  <button onclick="hit('/sm/leagues')">🏆 GET /sm/leagues</button>
+  <button onclick="hit('/sm/seasons')">📆 GET /sm/seasons (WC 2026)</button>
+  <button onclick="smGroups()">👥 GET /sm/groups/... (necesita season_id)</button>
+</div>
+
+<div id="status"></div>
+<div id="output">← Tocá un endpoint para testear.\n\nNota: si el servicio está dormido, el primer request puede tardar hasta 50 segundos.</div>
+
+<script>
+const BASE = 'https://asado-sports-api.onrender.com';
+let awakened = false;
+
+function setStatus(msg, cls) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = cls || '';
+}
+
+function syntaxHL(obj) {
+  return JSON.stringify(obj, null, 2)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"([^"]+)":/g, '<span style="color:#4fc3f7">"$1"</span>:')
+    .replace(/: "([^"]*)"/g, ': <span style="color:#a5d6a7">"$1"</span>')
+    .replace(/: (\d+\.?\d*)/g, ': <span style="color:#ffcc80">$1</span>')
+    .replace(/: (true|false)/g, ': <span style="color:#ce93d8">$1</span>')
+    .replace(/: null/g, ': <span style="color:#ef9a9a">null</span>');
+}
+
+async function ping() {
+  setStatus('⏳ Esperando respuesta... (puede tardar hasta 50s si está dormido)', 'warn');
+  document.getElementById('output').innerHTML = 
+    '<div class="ping-warning">⚠️ Free tier de Render se duerme tras 15 min de inactividad.\nPrimer request puede tardar hasta 50 segundos. Esperando...</div>';
+  
+  const t0 = Date.now();
+  try {
+    const r = await fetch(`${BASE}/`);
+    const d = await r.json();
+    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+    awakened = true;
+    setStatus(`✅ HTTP ${r.status} — respondió en ${elapsed}s`, 'ok');
+    document.getElementById('output').innerHTML = 
+      `<div class="summary">⏱️ Tiempo de respuesta: ${elapsed}s${elapsed > 10 ? ' (estaba dormido, ya despertó ✅)' : ' (estaba activo ⚡)'}</div>` +
+      syntaxHL(d);
+  } catch(e) {
+    setStatus('❌ Error de conexión', 'err');
+    document.getElementById('output').textContent = e.toString();
+  }
+}
+
+async function hit(path) {
+  if (!awakened) {
+    setStatus('⚠️ Tip: hacé primero el health check para despertar el servicio', 'warn');
+  }
+  setStatus(`⏳ GET ${path}...`, '');
+  const t0 = Date.now();
+  try {
+    const r = await fetch(`${BASE}${path}`);
+    const d = await r.json();
+    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+    
+    // Analizar respuesta
+    let summary = '';
+    if (d.ok === false) {
+      summary = `<div class="ping-warning">⚠️ ok:false — ${d.error || d.message || 'ver detalle'}</div>`;
+      setStatus(`⚠️ HTTP ${r.status} — ${elapsed}s (respuesta con error lógico)`, 'warn');
+    } else {
+      const count = Array.isArray(d.data) ? d.data.length : (d.data ? 1 : '?');
+      summary = `<div class="summary">✅ HTTP ${r.status} | ${elapsed}s | source: ${d.source || 'N/A'} | registros: ${count}</div>`;
+      setStatus(`✅ HTTP ${r.status} — ${elapsed}s`, 'ok');
+      awakened = true;
+    }
+    
+    document.getElementById('output').innerHTML = summary + syntaxHL(d);
+  } catch(e) {
+    setStatus('❌ ' + e.message, 'err');
+    document.getElementById('output').textContent = e.toString();
+  }
+}
+
+async function smGroups() {
+  const sid = prompt('Season ID de SportMonks (probá: 21646, 23614, 1):');
+  if (!sid) return;
+  await hit(`/sm/groups/${sid}`);
+}
+</script>
+</body>
+</html>
