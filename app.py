@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 import requests, os
 
@@ -8,6 +8,10 @@ CORS(app)
 FOOTBALL_DATA_KEY = os.environ.get('FOOTBALL_DATA_KEY', '')
 FOOTBALL_DATA_URL = 'https://api.football-data.org/v4'
 JOLPICA = 'https://api.jolpi.ca/ergast/f1'
+
+# SportMonks token — setear como env var SPORTMONKS_TOKEN en producción
+SPORTMONKS_TOKEN = os.environ.get('SPORTMONKS_TOKEN', 'sfvnNhihy5FY4JWTM1B7JOXA3jlatU1Jv6NtWfn0xS7VTkiA28HKUQNsNNbu')
+SPORTMONKS_BASE = 'https://api.sportmonks.com/v3/football'
 
 GRUPOS_2026 = {
   "A": ["Mexico","Jamaica","Honduras","Ecuador"],
@@ -39,9 +43,13 @@ BANDERAS = {
   "Iran":"IR","Cuba":"CU","Qatar":"QA","China":"CN",
 }
 
+# ─── HEALTH ────────────────────────────────────────────────────────────────────
+
 @app.route('/')
 def health():
     return jsonify({'status':'ok','service':'asado-sports-api'})
+
+# ─── MUNDIAL ───────────────────────────────────────────────────────────────────
 
 @app.route('/mundial/grupos')
 def mundial_grupos():
@@ -56,6 +64,80 @@ def mundial_grupos():
         'equipos':[{'nombre':e,'flag':BANDERAS.get(e,''),'pts':0,'pj':0,'pg':0,'pe':0,'pp':0,'gf':0,'gc':0} for e in v]}
         for k,v in GRUPOS_2026.items()]
     return jsonify({'ok':True,'source':'static','data':grupos_fmt})
+
+# ─── SPORTMONKS PROXY ──────────────────────────────────────────────────────────
+# Resuelve el problema de CORS: el browser no puede llamar SportMonks directo,
+# pero sí puede llamar este backend que actúa como proxy transparente.
+
+def sm_get(path, params=None):
+    """Helper: GET a SportMonks endpoint con el token del backend."""
+    url = f'{SPORTMONKS_BASE}/{path.lstrip("/")}'
+    p = params or {}
+    p['api_token'] = SPORTMONKS_TOKEN
+    r = requests.get(url, params=p, timeout=10)
+    return r.json(), r.status_code
+
+@app.route('/sm/ping')
+def sm_ping():
+    """Verifica token y muestra recursos disponibles en el plan."""
+    data, status = sm_get('/../../core/my/resources'.replace('../../', '').replace('football/', ''),
+                          {})
+    # endpoint correcto para recursos
+    r = requests.get('https://api.sportmonks.com/v3/core/my/resources',
+                     params={'api_token': SPORTMONKS_TOKEN}, timeout=10)
+    return jsonify({'ok': r.status_code == 200, 'status': r.status_code, 'data': r.json()}), r.status_code
+
+@app.route('/sm/leagues')
+def sm_leagues():
+    """Lista ligas disponibles en el plan (busca FIFA World Cup)."""
+    data, status = sm_get('leagues', {'page': 1, 'per_page': 50})
+    return jsonify(data), status
+
+@app.route('/sm/seasons')
+def sm_seasons():
+    """Busca seasons del Mundial 2026."""
+    data, status = sm_get('seasons', {'filters': 'seasonName:2026 FIFA World Cup'})
+    return jsonify(data), status
+
+@app.route('/sm/standings/<int:season_id>')
+def sm_standings(season_id):
+    """Standings/tabla de posiciones por season_id."""
+    data, status = sm_get(f'standings/seasons/{season_id}')
+    return jsonify(data), status
+
+@app.route('/sm/groups/<int:season_id>')
+def sm_groups(season_id):
+    """Grupos de una season (si el plan lo permite)."""
+    data, status = sm_get(f'groups/seasons/{season_id}')
+    return jsonify(data), status
+
+@app.route('/sm/stages/<int:season_id>')
+def sm_stages(season_id):
+    """Stages/fases de una season."""
+    data, status = sm_get(f'stages/seasons/{season_id}', {'include': 'rounds'})
+    return jsonify(data), status
+
+@app.route('/sm/fixtures/upcoming')
+def sm_fixtures_upcoming():
+    """Próximos partidos — filtrable por league_id query param."""
+    league_id = request.args.get('league_id', '')
+    params = {'include': 'participants'}
+    if league_id:
+        params['filters'] = f'leagueId:{league_id}'
+    data, status = sm_get('fixtures/upcoming', params)
+    return jsonify(data), status
+
+@app.route('/sm/proxy')
+def sm_proxy():
+    """Proxy genérico: ?path=leagues&param1=val1 — para explorar desde el frontend."""
+    path = request.args.get('path', '')
+    if not path:
+        return jsonify({'ok': False, 'error': 'Falta ?path='}), 400
+    extra_params = {k: v for k, v in request.args.items() if k != 'path'}
+    data, status = sm_get(path, extra_params)
+    return jsonify(data), status
+
+# ─── F1 ────────────────────────────────────────────────────────────────────────
 
 @app.route('/f1/pilotos')
 def f1_pilotos():
